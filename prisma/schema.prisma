@@ -1,0 +1,327 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)  
+  authorId  Int?
+}
+
+model User {
+  userId    Int     @id @default(autoincrement())
+  identification String @db.VarChar(30) @unique
+  typeId Int
+  firstName  String @db.VarChar(30)
+  secondName String @db.VarChar(30)
+  lastName String @db.VarChar(30)
+  lastName2 String @db.VarChar(30)
+  email String  @unique
+  cityId Int 
+  phone String
+  cellPhone String 
+  address String  
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+  type IdentificationType @relation(fields: [typeId], references: [typeId])
+  city City @relation(fields: [cityId], references: [cityId])
+  infoUser InfoUser[]
+  jobUser JobUser[]
+  financialUser FinancialUser[]
+  passwordUser PasswordUser[]
+  profileUser ProfileUser[]
+  userDocument DocumentUser[] @relation("UserDocument")
+  userCreate DocumentUser[] @relation("UserCreate")
+  updateCreate DocumentUser[] @relation("UserUpdate")
+  userSchedule ScheduleUser[] @relation("UserSchedule")
+  scheduleCreate ScheduleUser[] @relation("ScheduleCreate")
+  scheduleUpdate ScheduleUser[] @relation("ScheduleUpdate")
+  userProfiling ProfilingUser[] @relation("UserProfiling")
+}
+
+model InfoUser{  
+  user User @relation(fields: [infoUserId], references: [userId])
+  infoUserId Int  @id  
+  neighborhood String // Barrio
+  locality String // Localidad
+  birthDate DateTime @db.Date // Fecha de Nacimiento
+  birthPlace String // Lugar de Nacimiento
+  maritalStatus String // Estado civil
+  dependents Int // Personas a cargo
+  levelStudies String // Nivel de Estudios
+  profession String // Profesión, Ocupación u Oficio
+  zoneType String // Rural o Urbana
+  houseType String // Tipo de vivienda (Familiar, Arriendo, Hipoteca)  
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+}
+
+model JobUser{
+  user User @relation(fields: [jobId], references: [userId])
+  jobId Int  @id
+  activity String // Actividad principal (Pensionado, Empleado, hogar, estudiante, desempleado)
+  description String // Describa la actividad de la cuál deriva más del 50% de sus ingresos
+  company Company @relation(fields: [companyId], references: [companyId])
+  companyId Int
+  dateBegin DateTime @db.Date // Fecha de Ingreso
+  agreementType String // Tipo de contrato (Indefinido, labor/hora, Carrera Administrativa)
+  income Float // Ingresos
+  expenses Float // Egresos
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+}
+
+model FinancialUser{
+  user User @relation(fields: [financialId], references: [userId])
+  financialId Int  @id
+  incomeMonthly Float // Ingresos mensuales
+  assetsTotal Float // Total activos
+  liabilitiesTotal Float // Total pasivos
+  rent Boolean // Declara renta  
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+}
+
+model Company{
+  companyId Int     @id @default(autoincrement())
+  company String // Empleador o negocio del cuál es propietario
+  identification String // Nit      
+  cityId Int
+  phone String
+  address String
+  activity String // Actividad económica de la empresa (Sector público, sector privado) 
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+  city City @relation(fields: [cityId], references: [cityId])
+  jobUser JobUser[]  
+}
+
+model IdentificationType{
+  typeId    Int    @id @default(autoincrement())
+  type String? @default("CC")
+  user User[]
+}
+
+model City{
+  cityId    Int     @id @default(autoincrement())
+  name String
+  zipcode String
+  state String // Departamento
+  idcountry Int //pendiente
+  user User[]
+  company Company[]
+}
+
+model PasswordUser{
+  user User @relation(fields: [identification], references: [identification])
+  identification String @db.VarChar(30) @unique
+  token String
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+}
+
+model ProfileUser{
+  id     Int  @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [userId])  
+  profile Profile @relation(fields: [profileId], references: [profileId])  
+  userId  Int  
+  profileId Int
+  createAt DateTime
+  createUser String
+  updateAt DateTime
+  updateUser String
+}
+
+model Profile{
+  profileId Int  @id @default(autoincrement())
+  profile String
+  extendedData Json?
+  profileUser ProfileUser[]
+}
+
+// Documentos personales del Usuario
+// Cédula, fotos, licencia de conducción, contrato de outsorurcing
+model DocumentUser{
+  id Int @id @default(autoincrement())
+  user User @relation(name:"UserDocument", fields: [userId], references: [userId]) 
+  userId Int  
+  typeId String
+  name String
+  path String  
+  createAt DateTime
+  createdBy User @relation(name:"UserCreate", fields: [createUser], references: [userId])  
+  createUser Int
+  updateAt DateTime
+  updatedBy User @relation(name:"UserUpdate", fields: [updateUser], references: [userId])  
+  updateUser Int
+}
+
+///amortization/////////////////////////////////////////
+
+model Amortization{
+  id Int @id @default(autoincrement())
+  amount Float
+  months Int
+  interest Float
+  dateBegin DateTime @db.Date
+  agrEntity AgreementEntity @relation(name:"AgrEntity", fields: [entityId], references: [id]) 
+  entityId Int 
+  result Json? // Guarda en Json el resultado de la consulta
+}
+
+
+///schedule/////////////////////////////////////////
+
+model ScheduleUser{
+  id Int @id @default(autoincrement())
+  user User @relation(name:"UserSchedule", fields: [userId], references: [userId]) 
+  userId Int  
+  dateBegin DateTime @db.Date
+  timeBegin DateTime @db.Time
+  dateEnd DateTime @db.Date
+  timeEnd DateTime @db.Time
+  title String
+  guests String // asistentes separados por coma
+  location String
+  url String // link para reunión virtual
+  details String
+  createAt DateTime
+  createdBy User @relation(name:"ScheduleCreate", fields: [createUser], references: [userId])  
+  createUser Int
+  updateAt DateTime
+  updatedBy User @relation(name:"ScheduleUpdate", fields: [updateUser], references: [userId])  
+  updateUser Int
+}
+
+///agreements_entity
+//TODO: Revisar nombre
+model AgreementEntity{
+  agrEntity Amortization[] @relation("AgrEntity")
+  id Int @id @default(autoincrement())  
+
+}
+
+//Profiling (Perfilamiento)
+model ProfilingUser{
+  id Int @id @default(autoincrement()) 
+  user User @relation(name:"UserProfiling", fields: [userId], references: [userId]) 
+  userId Int   
+}
+
+//CORE
+// Ver archivo https://docs.google.com/spreadsheets/d/1On798izEtTbhgyV4z3oKfJfs47HGdTP-/edit#gid=548799427
+model Agreement{
+  agreementId Int @id @default(autoincrement())
+  FinancialEntity FinancialEntity @relation(fields: [financialEntityId], references: [financialEntityId]) 
+  financialEntityId Int
+  safetyMargin String //(Se debe castear, puede ser porcentaje o número)
+  gracePeriod Int // Periodo de gracia en meses
+  gracePeriodPurchase Int // Periodo de gracia compra en meses
+  abilityToPay String // capacidad de pago (formula)
+  state Boolean // Estado (activo, inactivo)
+}
+
+model FinancialEntity{ ///Ej: bancos
+  financialEntityId Int @id @default(autoincrement())
+  agreement Agreement[]  
+  //entityMaster PurchaseDenied[] @relation("EntityMaster")
+  //entityDenied PurchaseDenied[] @relation("EntityDenied")
+  //entityPurchase EntityPurchase[]
+  //entityParams AgreementParams[]
+}
+
+// model ThirdEntity{  //Listado de  pagadurias
+//   thirdEntityId Int @id @default(autoincrement())  
+//   name String  
+//   segment String
+//   entityPurchase EntityPurchase[]
+//   entityParams AgreementParams[]
+// }
+
+// model PurchaseDenied{// Bancos a los q no compra cartera
+//   entityMaster FinancialEntity @relation(name:"EntityMaster", fields: [entityId], references: [financialEntityId]) 
+//   entityId Int
+//   entityDenied FinancialEntity @relation(name:"EntityDenied", fields: [entityIdDenied], references: [financialEntityId]) 
+//   entityIdDenied Int
+// }
+
+// model EntityPurchase{// bancos habilitados para compra de cartera
+//   financialEntity FinancialEntity @relation(fields: [financialEntityId], references: [financialEntityId])
+//   financialEntityId Int  @id  
+//   thirdEntity ThirdEntity @relation(fields: [thirdEntityId], references: [thirdEntityId])
+//   thirdEntityId Int  
+//   purchase Boolean // compra cartera si/no 
+//   rate Float
+//   value Float // valor de la tasa  
+// }
+
+// model AgreementParams{
+//   agreement Agreement @relation(fields: [agreementId], references: [agreementId])
+//   agreementId Int  @id
+//   rate Float
+//   ageStart Int // edad en años 
+//   ageEnd Int  
+//   term Int // plazo en meses
+//   factor Float // factor ?? aplica al del seguro ??
+//   extraPrima Float // % q se le aplica al factr de seguro  
+//   income Float // ingresos  
+// }
+
+
+// model Credit{
+//   creditId Int @id @default(autoincrement())
+//   agreement Agreement @relation(fields: [agreementId], references: [agreementId])
+//   agreementId Int
+//   vendor User @relation(name:"VendorUser", fields: [vendorId], references: [identification])
+//   vendorId String @db.VarChar(30) @unique
+//   customer User @relation(name:"CustomerUser", fields: [customerId], references: [identification])
+//   customerId String @db.VarChar(30) @unique
+//   value Float
+//   rate Float
+//   term Int
+//   state Int
+//   stage Int
+//   dateStart DateTime @db.Date // Fecha de desembolso
+//   //userDocument DocumentUser[] @relation("UserDocument")   ?? check TODO
+// }
+
+
+// model CreditRequest{  ///requerimientos del banco al cliente por credito
+//   creditId Int @id @default(autoincrement())
+//   message String  // mensaje requerimiento
+//   state Int  // estado de req
+//   response String  //respuest del cliente o asesor
+// }
+
+
+// model CreditStages{  //etapas de los creditos por banco
+//   creditStagesId Int @id @default(autoincrement())
+//   financialEntity FinancialEntity @relation(fields: [financialEntityId], references: [financialEntityId])
+//   financialEntityId Int  
+//   name String
+//   order Int
+//   type String //libranza, libre, tarjeta de credito
+// }
